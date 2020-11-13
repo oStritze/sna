@@ -9,3 +9,5 @@ You can create conda env from file for convenience: ``` conda env create -f cond
     - `pyhton/`: add modules there
 
 ## ToDo:
+Create ToDo List :)
+see brainstorm.pdf
