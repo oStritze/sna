@@ -1,4 +1,15 @@
 import networkx as nx
+import pandas as pd
+
+
+def read_all_postings():
+	postings = pd.read_csv("../data/raw/Postings_01052019_15052019.csv", delimiter=";")
+	return pd.concat([postings, pd.read_csv("../data/raw/Postings_16052019_31052019.csv", delimiter=";")])
+
+
+def read_all_votes():
+	votes = pd.read_csv("../data/raw/Votes_01052019_15052019.csv", delimiter=";")
+	return pd.concat([votes, pd.read_csv("../data/raw/Votes_16052019_31052019.csv", delimiter=";")])
 
 
 def get_in_degrees(G: nx.DiGraph):

@@ -1,11 +1,17 @@
 import pandas as pd
 import networkx as nx
 from collections import Counter
+import utils
 
 
 def get_articles_shared_users(postings=None):
+	"""
+	:param postings: Custom postings dataframe, if None (default) use all postings.
+	:return: An undirected graph with articles as nodes and edges between two articles, if there exists an user
+	that commented both articles. The edges have an attributes 'Shared_Users' that count these users commented both articles.
+	"""
 	if postings is None:
-		postings = read_all_postings()
+		postings = utils.read_all_postings()
 
 	postings = postings[["ID_CommunityIdentity", "ID_Article"]].drop_duplicates()
 	postings2 = postings.copy()
@@ -16,9 +22,16 @@ def get_articles_shared_users(postings=None):
 
 
 def get_users_voted_other_users(joined=None, positive_vote=True, multi_di_graph=False):
+	"""
+	:param joined: Custom dataframe resulted by joining postings and votes, if None (default) join all postings with all votes.
+	:param positive_vote: If True (default), consider positve votes between users, otherwise take negative votes.
+	:param multi_di_graph: If True, return nx.MultiDiGraph, if False (default) nx.DiGraph.
+	:return: A directed graph (or multigraph) with users as nodes and arc from user1 to user2, if user1 voted user2
+		positively (negatively).
+	"""
 	if joined is None:
-		postings = read_all_postings()
-		votes = read_all_votes()
+		postings = utils.read_all_postings()
+		votes = utils.read_all_votes()
 		joined = postings.merge(votes, on="ID_Posting", suffixes=("_p", "_v"))
 
 	joined = joined[["ID_CommunityIdentity_p", "ID_Posting", "ID_CommunityIdentity_v", "VoteNegative", "VotePositive"]] \
@@ -30,8 +43,13 @@ def get_users_voted_other_users(joined=None, positive_vote=True, multi_di_graph=
 
 
 def get_users_commented_other_users(postings=None, multi_di_graph=False):
+	"""
+	:param postings: Custom postings dataframe, if None (default) use all postings.
+	:param multi_di_graph: If True, return nx.MultiDiGraph, if False (default) nx.DiGraph.
+	:return: A directed graph (or multigraph) with users as nodes and arc from user1 to user2, if user1 commented user2.
+	"""
 	if postings is None:
-		postings = read_all_postings()
+		postings = utils.read_all_postings()
 
 	parent_postings = postings.query("ID_Posting_Parent == 'NaN'")
 	child_postings = postings.query("ID_Posting_Parent != 'NaN'")
@@ -43,9 +61,16 @@ def get_users_commented_other_users(postings=None, multi_di_graph=False):
 
 
 def get_all_users_interactions(postings=None, votes=None, multi_di_graph=False):
+	"""
+	:param postings: Custom postings dataframe, if None (default) use all postings.
+	:param votes: Custom votes dataframe, if None (default) use all votes.
+	:param multi_di_graph: If True, return nx.MultiDiGraph, if False (default) nx.DiGraph.
+	:return: A directed graph (or multigraph) with users as nodes and arc from user1 to user2, if user1 interacted with user2,
+		i.e. voted positively, negatively, or did a comment.
+	"""
 	if postings is None or votes is None:
-		postings = read_all_postings()
-		votes = read_all_votes()
+		postings = utils.read_all_postings()
+		votes = utils.read_all_votes()
 
 	joined = postings.merge(votes, on="ID_Posting", suffixes=("_p", "_v"))
 	positives = get_users_voted_other_users(joined, positive_vote=True, multi_di_graph=multi_di_graph)
@@ -53,15 +78,6 @@ def get_all_users_interactions(postings=None, votes=None, multi_di_graph=False):
 	comments = get_users_commented_other_users(postings, multi_di_graph=multi_di_graph)
 	return nx.disjoint_union_all([positives, negatives, comments])
 
-
-def read_all_postings():
-	postings = pd.read_csv("../data/raw/Postings_01052019_15052019.csv", delimiter=";")
-	return pd.concat([postings, pd.read_csv("../data/raw/Postings_16052019_31052019.csv", delimiter=";")])
-
-
-def read_all_votes():
-	votes = pd.read_csv("../data/raw/Votes_01052019_15052019.csv", delimiter=";")
-	return pd.concat([votes, pd.read_csv("../data/raw/Votes_16052019_31052019.csv", delimiter=";")])
 
 def get_weighted_interaction_graph(postings, votes, thresh=0):
 	G = get_all_users_interactions(postings, votes, multi_di_graph=True)
