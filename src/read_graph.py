@@ -21,7 +21,7 @@ def get_articles_shared_users(postings=None):
 	return nx.from_pandas_edgelist(postings_merged, source="ID_Article_x", target="ID_Article_y", edge_attr=True)
 
 
-def get_users_voted_other_users(joined=None, positive_vote=True, multi_di_graph=False):
+def get_users_voted_other_users(joined=None, postings=None, votes=None, positive_vote=True, multi_di_graph=False):
 	"""
 	:param joined: Custom dataframe resulted by joining postings and votes, if None (default) join all postings with all votes.
 	:param positive_vote: If True (default), consider positve votes between users, otherwise take negative votes.
@@ -29,9 +29,13 @@ def get_users_voted_other_users(joined=None, positive_vote=True, multi_di_graph=
 	:return: A directed graph (or multigraph) with users as nodes and arc from user1 to user2, if user1 voted user2
 		positively (negatively).
 	"""
-	if joined is None:
+	if postings is None:
 		postings = utils.read_all_postings()
+	
+	if votes is None:
 		votes = utils.read_all_votes()
+	
+	if joined is None:
 		joined = postings.merge(votes, on="ID_Posting", suffixes=("_p", "_v"))
 
 	joined = joined[["ID_CommunityIdentity_p", "ID_Posting", "ID_CommunityIdentity_v", "VoteNegative", "VotePositive"]] \
