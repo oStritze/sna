@@ -11,3 +11,9 @@ You can create conda env from file for convenience: ``` conda env create -f cond
 ## ToDo:
 Create ToDo List :)
 see brainstorm.pdf
+
+- implement modularity maximization (DONE)
+- Strache bug fix + deep dive
+- Einen Artikel anschauen und Kommentare dazu anschauen
+- Mit statischem Graph vergleichen (im Gegensatz zu gewissen Artikeln)
+- Metriken finden um zwei Communities zu vergleichen
