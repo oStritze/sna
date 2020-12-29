@@ -16,3 +16,4 @@ see brainstorm.pdf
 - Strache bug fix + deep dive
 - Einen Artikel anschauen und Kommentare dazu anschauen
 - Mit statischem Graph vergleichen (im Gegensatz zu gewissen Artikeln)
+- Metriken finden um zwei Communities zu vergleichen
