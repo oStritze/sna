@@ -49,7 +49,7 @@ def get_communities(G, min_size=100):
 	graph = G.to_undirected()
 
 	# compute the best partition
-	partition = community_louvain.best_partition(graph)
+	partition = community_louvain.best_partition(graph)  # source: https://github.com/taynaud/python-louvain
 
 	# extract communities as lists of node IDs with community ID as key
 	all_communities = defaultdict(list)
