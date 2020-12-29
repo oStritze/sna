@@ -1,5 +1,10 @@
 import networkx as nx
 import pandas as pd
+import community as community_louvain # pip install python-louvain
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+import networkx as nx
+from collections import defaultdict
 
 
 def read_all_postings():
@@ -34,3 +39,30 @@ def get_distinct_cliques(G: nx.Graph, n=None):
 			nodes = nodes.union(set(c))
 			distinct_cliques.append(c)
 	return distinct_cliques
+
+
+# Get communities from a graph based on modularity maximization
+# G .. weighted Graph
+# min_size .. ignore communities below minimum size (as modularity maximization does not work for small communities)
+# returns list of communities where each community is a list of node IDs, sorted by size of community (descending)
+def get_communities(G, min_size=100):
+	graph = G.to_undirected()
+
+	# compute the best partition
+	partition = community_louvain.best_partition(graph)
+
+	# extract communities as lists of node IDs with community ID as key
+	all_communities = defaultdict(list)
+	for key, value in sorted(partition.items()):
+		all_communities[value].append(key)
+
+	# drop small communities < min_size (modularity maximization does not correctly identify small communities)
+	communities = []
+	for val in all_communities.values():
+		if len(val) >= min_size:
+			communities.append(val)
+
+	# sort by community size in descending order
+	communities.sort(key=len, reverse=True)
+
+	return communities
