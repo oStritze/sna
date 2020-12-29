@@ -85,7 +85,7 @@ def get_all_users_interactions(postings=None, votes=None, multi_di_graph=False):
 
 def get_weighted_interaction_graph(postings, votes, thresh=0):
 	G = get_all_users_interactions(postings, votes, multi_di_graph=True)
-	width_dict = Counter(G.edges())
+	width_dict = Counter([tuple(sorted(edge)) for edge in G.edges()])
 	edge_width = [(u, v, value) for ((u, v), value) in width_dict.items()]
 	all_int_weighted = pd.DataFrame(edge_width)
 	all_int_weighted.columns = ["user1", "user2", "weight"]
