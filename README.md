@@ -12,7 +12,7 @@ You can create conda env from file for convenience: ``` conda env create -f cond
 Create ToDo List :)
 see brainstorm.pdf
 
-- implement modularity maximization
+- implement modularity maximization (DONE)
 - Strache bug fix + deep dive
 - Einen Artikel anschauen und Kommentare dazu anschauen
 - Mit statischem Graph vergleichen (im Gegensatz zu gewissen Artikeln)
