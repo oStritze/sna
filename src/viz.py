@@ -1,5 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+from typing import List, Dict
 
 
 def plot_graph(G: nx.Graph, figsize=(20, 20), with_labels=True, arrows=True):
@@ -37,3 +38,23 @@ def plot_colored_graph(G: nx.Graph, node_color_attr=None, edge_color_attr=None, 
 	if ax is None:
 		plt.axis('off')
 		plt.show()
+
+
+def compare_snapshots(snapshots_list: List[Dict], ranges: List[range], figsize=(25, 15)):
+	date_indices = sum([list(r) for r in ranges], [])
+	range_ids = sum([[i] * len(r) for (i, r) in enumerate(ranges)], [])
+
+	dates = sorted(snapshots_list[0].keys())
+	dates = [dates[i] for i in date_indices]
+
+	nrows, ncols = len(snapshots_list), len(dates)
+	fig, ax = plt.subplots(nrows=nrows, ncols=ncols, sharey=True, figsize=figsize)
+	for i, ax_i in enumerate(ax):
+		for j, ax_j in enumerate(ax_i):
+			snapshots = snapshots_list[i]
+			date = dates[j]
+			G = snapshots[date]
+			plot_colored_graph(G, edge_color_attr="weight", edge_width_factor=10, node_size=20,
+							   pos=nx.circular_layout(G), ax=ax_j)
+			range_id = range_ids[j]
+			ax_j.set_title(date, {"color": "black" if range_id % 2 == 0 else "red"})

@@ -69,28 +69,37 @@ def get_communities(G, min_size=100, random_state=19):
 	return communities
 
 
-def generate_snapshots_over_time(postings, votes, community: List[int], interval: int, unit: str, max_snapshots=None):
-	if interval < 1 or unit not in ["h", "d"]:
-		raise Exception("Illegal interval or unit values")
+def generate_snapshots_over_time(G: nx.MultiGraph, hours=0, days=0, max_snapshots=None, interval=None):
+	"""
+	:param G: Multigraph you want to watch over time, with
+	:param hours: Number of hours between two snapshots (Default 0)
+	:param days: Number of days between two snapshots (Default 0)
+	:param max_snapshots: Maximum number of generated snapshots (Default None - all snapshots are created)
+	:param interval: Tuple (start, end) specifying in which interval to generate snapshots (Default None - takes min, max created_at date of G)
+	:return: A dict with timestamps
+	"""
+	if nx.get_edge_attributes(G, "created_at") == {}:
+		raise Exception("Graph needs 'created_at' edge attribute")
+	if hours < 0 or days < 0 or hours + days <= 0:
+		raise Exception("Illegal hours or days values")
 
-	G = read_graph.get_all_users_interactions(postings, votes, multi_di_graph=True, with_timestamp=True)
-	G = G.subgraph(community)
 	edges = G.edges(data=True)
 	created_ats = [attr["created_at"] for (_, _, attr) in edges]
-	date = str_to_datetime(min(created_ats))
-	max_date = str_to_datetime(max(created_ats))
-	Gs = []
-	while date <= max_date and (max_snapshots is None or len(Gs) < max_snapshots):
-		print(date)
+	if interval is None:
+		date = str_to_datetime(min(created_ats))
+		max_date = str_to_datetime(max(created_ats))
+	else:
+		date = str_to_datetime(interval[0])
+		max_date = str_to_datetime(interval[1])
+	snapshots = {}
+	while date <= max_date and (max_snapshots is None or len(snapshots) < max_snapshots):
 		edges_snapshot = [(a, b) for (a, b, attr) in edges if str_to_datetime(attr["created_at"]) <= date]
 		nodes_snapshot = list(sum(edges_snapshot, ()))
 		G_snapshot = G.subgraph(nodes_snapshot)
-		Gs.append(reduce_multi_graph(G_snapshot))
-		if unit == "h":
-			date += timedelta(hours=interval)
-		elif unit == "d":
-			date += timedelta(days=interval)
-	return Gs
+		snapshots[date] = reduce_multi_graph(G_snapshot)
+
+		date += timedelta(hours=hours, days=days)
+	return snapshots
 
 
 def reduce_multi_graph(graph: nx.MultiGraph, thresh=0):
