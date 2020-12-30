@@ -1,6 +1,5 @@
 import pandas as pd
 import networkx as nx
-from collections import Counter
 import utils
 
 
@@ -21,11 +20,12 @@ def get_articles_shared_users(postings=None):
 	return nx.from_pandas_edgelist(postings_merged, source="ID_Article_x", target="ID_Article_y", edge_attr=True)
 
 
-def get_users_voted_other_users(joined=None, postings=None, votes=None, positive_vote=True, multi_di_graph=False):
+def get_users_voted_other_users(joined=None, postings=None, votes=None, positive_vote=True, multi_di_graph=False, with_timestamp=False):
 	"""
 	:param joined: Custom dataframe resulted by joining postings and votes, if None (default) join all postings with all votes.
 	:param positive_vote: If True (default), consider positve votes between users, otherwise take negative votes.
 	:param multi_di_graph: If True, return nx.MultiDiGraph, if False (default) nx.DiGraph.
+	:param with_timestamp: If True, edges contain an attribute "created_at".
 	:return: A directed graph (or multigraph) with users as nodes and arc from user1 to user2, if user1 voted user2
 		positively (negatively).
 	"""
@@ -38,18 +38,21 @@ def get_users_voted_other_users(joined=None, postings=None, votes=None, positive
 	if joined is None:
 		joined = postings.merge(votes, on="ID_Posting", suffixes=("_p", "_v"))
 
-	joined = joined[["ID_CommunityIdentity_p", "ID_Posting", "ID_CommunityIdentity_v", "VoteNegative", "VotePositive"]] \
-		.query("{} == 1".format("VotePositive" if positive_vote else "VoteNegative"))
+	joined = joined.query("{} == 1".format("VotePositive" if positive_vote else "VoteNegative"))[
+		["ID_CommunityIdentity_p", "ID_CommunityIdentity_v", "VoteCreatedAt"]
+	].rename(columns={"VoteCreatedAt": "created_at"})
+	edge_attr = True if with_timestamp else None
 	if multi_di_graph:
-		return nx.from_pandas_edgelist(joined, source="ID_CommunityIdentity_v", target="ID_CommunityIdentity_p", create_using=nx.MultiDiGraph)
+		return nx.from_pandas_edgelist(joined, source="ID_CommunityIdentity_v", target="ID_CommunityIdentity_p", create_using=nx.MultiDiGraph, edge_attr=edge_attr)
 	else:
-		return nx.from_pandas_edgelist(joined, source="ID_CommunityIdentity_v", target="ID_CommunityIdentity_p", create_using=nx.DiGraph)
+		return nx.from_pandas_edgelist(joined, source="ID_CommunityIdentity_v", target="ID_CommunityIdentity_p", create_using=nx.DiGraph, edge_attr=edge_attr)
 
 
-def get_users_commented_other_users(postings=None, multi_di_graph=False):
+def get_users_commented_other_users(postings=None, multi_di_graph=False, with_timestamp=False):
 	"""
 	:param postings: Custom postings dataframe, if None (default) use all postings.
 	:param multi_di_graph: If True, return nx.MultiDiGraph, if False (default) nx.DiGraph.
+	:param with_timestamp: If True, edges contain an attribute "created_at".
 	:return: A directed graph (or multigraph) with users as nodes and arc from user1 to user2, if user1 commented user2.
 	"""
 	if postings is None:
@@ -57,18 +60,22 @@ def get_users_commented_other_users(postings=None, multi_di_graph=False):
 
 	parent_postings = postings.query("ID_Posting_Parent == 'NaN'")
 	child_postings = postings.query("ID_Posting_Parent != 'NaN'")
-	postings_joined = parent_postings.merge(child_postings, left_on="ID_Posting", right_on="ID_Posting_Parent", suffixes=("_parent", "_child"))
+	postings_joined = parent_postings.merge(child_postings, left_on="ID_Posting", right_on="ID_Posting_Parent", suffixes=("_parent", "_child"))[
+		["ID_CommunityIdentity_child", "ID_CommunityIdentity_parent", "PostingCreatedAt_child"]
+	].rename(columns={"PostingCreatedAt_child": "created_at"})
+	edge_attr = True if with_timestamp else None
 	if multi_di_graph:
-		return nx.from_pandas_edgelist(postings_joined, source="ID_CommunityIdentity_child", target="ID_CommunityIdentity_parent", create_using=nx.MultiDiGraph)
+		return nx.from_pandas_edgelist(postings_joined, source="ID_CommunityIdentity_child", target="ID_CommunityIdentity_parent", create_using=nx.MultiDiGraph, edge_attr=edge_attr)
 	else:
-		return nx.from_pandas_edgelist(postings_joined, source="ID_CommunityIdentity_child", target="ID_CommunityIdentity_parent", create_using=nx.DiGraph)
+		return nx.from_pandas_edgelist(postings_joined, source="ID_CommunityIdentity_child", target="ID_CommunityIdentity_parent", create_using=nx.DiGraph, edge_attr=edge_attr)
 
 
-def get_all_users_interactions(postings=None, votes=None, multi_di_graph=False):
+def get_all_users_interactions(postings=None, votes=None, multi_di_graph=False, with_timestamp=False):
 	"""
 	:param postings: Custom postings dataframe, if None (default) use all postings.
 	:param votes: Custom votes dataframe, if None (default) use all votes.
 	:param multi_di_graph: If True, return nx.MultiDiGraph, if False (default) nx.DiGraph.
+	:param with_timestamp: If True, edges contain an attribute "created_at".
 	:return: A directed graph (or multigraph) with users as nodes and arc from user1 to user2, if user1 interacted with user2,
 		i.e. voted positively, negatively, or did a comment.
 	"""
@@ -77,17 +84,16 @@ def get_all_users_interactions(postings=None, votes=None, multi_di_graph=False):
 		votes = utils.read_all_votes()
 
 	joined = postings.merge(votes, on="ID_Posting", suffixes=("_p", "_v"))
-	positives = get_users_voted_other_users(joined, positive_vote=True, multi_di_graph=multi_di_graph)
-	negatives = get_users_voted_other_users(joined, positive_vote=False, multi_di_graph=multi_di_graph)
-	comments = get_users_commented_other_users(postings, multi_di_graph=multi_di_graph)
+	positives = get_users_voted_other_users(joined, positive_vote=True, multi_di_graph=multi_di_graph, with_timestamp=with_timestamp)
+	negatives = get_users_voted_other_users(joined, positive_vote=False, multi_di_graph=multi_di_graph, with_timestamp=with_timestamp)
+	comments = get_users_commented_other_users(postings, multi_di_graph=multi_di_graph, with_timestamp=with_timestamp)
 	return nx.disjoint_union_all([positives, negatives, comments])
 
 
 def get_weighted_interaction_graph(postings, votes, thresh=0):
+	'''
+	:param thresh: Keeps edges with a weight >= the threshold (default 0)
+	:return: A graph with an edge attribute "weight" specifying the number of directed interactions between two user
+	'''
 	G = get_all_users_interactions(postings, votes, multi_di_graph=True)
-	width_dict = Counter([tuple(sorted(edge)) for edge in G.edges()])
-	edge_width = [(u, v, value) for ((u, v), value) in width_dict.items()]
-	all_int_weighted = pd.DataFrame(edge_width)
-	all_int_weighted.columns = ["user1", "user2", "weight"]
-	all_int_weighted_high = all_int_weighted[all_int_weighted.weight >= thresh]
-	return nx.from_pandas_edgelist(all_int_weighted_high, source="user1", target="user2", edge_attr=True)
+	return utils.reduce_multi_graph(G, thresh)
