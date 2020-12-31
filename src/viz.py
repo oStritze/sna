@@ -41,6 +41,12 @@ def plot_colored_graph(G: nx.Graph, node_color_attr=None, edge_color_attr=None, 
 
 
 def compare_snapshots(snapshots_list: List[Dict], ranges: List[range], figsize=(25, 15), include_final=False):
+	"""
+	:param snapshots_list: list of dictionaries. Each dict consists of a date key and a graph value
+	:param ranges: list of range objects. Each range specifies indices of the sorted date keyset, e.g. [range(2, 4), range(9, 12)]
+		compares the snapshots of the 2nd to 3rd and 9th to 11th date.
+	:param include_final: If True, the snapshot of the latest date is plotted (Default False)
+	"""
 	date_indices = sum([list(r) for r in ranges], [])
 	range_ids = sum([[i] * len(r) for (i, r) in enumerate(ranges)], [])
 
