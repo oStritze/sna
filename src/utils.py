@@ -42,11 +42,14 @@ def get_distinct_cliques(G: nx.Graph, n=None):
 	return distinct_cliques
 
 
-# Get communities from a graph based on modularity maximization
-# G .. weighted Graph
-# min_size .. ignore communities below minimum size (as modularity maximization does not work for small communities)
-# returns list of communities where each community is a list of node IDs, sorted by size of community (descending)
-def get_communities(G, min_size=100, random_state=19):
+def get_communities(G, min_size=100, random_state=19, sort_by_sum_interactions=False):
+	"""
+	Get communities from a graph based on modularity maximization
+	:param G: weighted graph
+	:param min_size: ignore communities below minimum size (as modularity maximization does not work for small communities)
+	:param key:
+	:return: list of communities where each community is a list of node IDs, sorted by size of community (descending)
+	"""
 	graph = G.to_undirected()
 
 	# compute the best partition
@@ -63,13 +66,16 @@ def get_communities(G, min_size=100, random_state=19):
 		if len(val) >= min_size:
 			communities.append(val)
 
-	# sort by community size in descending order
-	communities.sort(key=len, reverse=True)
+	if sort_by_sum_interactions:
+		communities.sort(key=lambda c: sum(nx.get_edge_attributes(G.subgraph(c), "weight").values()), reverse=True)
+	else:
+		# sort by community size in descending order
+		communities.sort(key=len, reverse=True)
 
 	return communities
 
 
-def generate_snapshots_over_time(G: nx.MultiGraph, hours=0, days=0, max_snapshots=None, interval=None):
+def generate_snapshots_over_time(G: nx.MultiGraph, minutes=0, hours=0, days=0, max_snapshots=None, interval=None):
 	"""
 	:param G: Multigraph you want to watch over time, with
 	:param hours: Number of hours between two snapshots (Default 0)
@@ -80,8 +86,8 @@ def generate_snapshots_over_time(G: nx.MultiGraph, hours=0, days=0, max_snapshot
 	"""
 	if nx.get_edge_attributes(G, "created_at") == {}:
 		raise Exception("Graph needs 'created_at' edge attribute")
-	if hours < 0 or days < 0 or hours + days <= 0:
-		raise Exception("Illegal hours or days values")
+	if minutes < 0 or hours < 0 or days < 0 or minutes + hours + days <= 0:
+		raise Exception("Illegal minutes, hours or days values")
 
 	edges = G.edges(data=True)
 	created_ats = [attr["created_at"] for (_, _, attr) in edges]
@@ -98,7 +104,7 @@ def generate_snapshots_over_time(G: nx.MultiGraph, hours=0, days=0, max_snapshot
 		G_snapshot = G.subgraph(nodes_snapshot)
 		snapshots[date] = reduce_multi_graph(G_snapshot)
 
-		date += timedelta(hours=hours, days=days)
+		date += timedelta(minutes=minutes, hours=hours, days=days)
 	return snapshots
 
 
