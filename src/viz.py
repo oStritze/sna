@@ -1,6 +1,8 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 from typing import List, Dict
+import utils
+import pandas as pd
 
 
 def plot_graph(G: nx.Graph, figsize=(20, 20), with_labels=True, arrows=True):
@@ -67,3 +69,23 @@ def compare_snapshots(snapshots_list: List[Dict], ranges: List[range], figsize=(
 							   pos=nx.circular_layout(G), ax=ax_j)
 			range_id = range_ids[j]
 			ax_j.set_title(date, {"color": "black" if range_id % 2 == 0 else "red"})
+
+
+def compare_snapshot_weights(snapshots_list: List[Dict], figsize=(10, 5)):
+	weights = []
+	for i, snapshots in enumerate(snapshots_list):
+		for date in snapshots:
+			G = snapshots[date]
+			weights.append({"community": i, "snapshot": date, "weight": utils.get_weight_sum(G)})
+	weights = pd.DataFrame(weights).set_index("community")
+
+	fig = plt.figure(figsize=figsize)
+	for community in weights.index.unique():
+		data = weights.loc[community]
+		plt.plot(data["snapshot"], data["weight"], label=community)
+
+	plt.title("Community Development")
+	plt.xlabel("Time")
+	plt.ylabel("Interactions inside community")
+	plt.legend()
+	plt.show()

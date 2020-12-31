@@ -67,7 +67,7 @@ def get_communities(G, min_size=100, random_state=19, sort_by_sum_interactions=F
 			communities.append(val)
 
 	if sort_by_sum_interactions:
-		communities.sort(key=lambda c: sum(nx.get_edge_attributes(G.subgraph(c), "weight").values()), reverse=True)
+		communities.sort(key=lambda c: get_weight_sum(G.subgraph(c)), reverse=True)
 	else:
 		# sort by community size in descending order
 		communities.sort(key=len, reverse=True)
@@ -75,13 +75,15 @@ def get_communities(G, min_size=100, random_state=19, sort_by_sum_interactions=F
 	return communities
 
 
-def generate_snapshots_over_time(G: nx.MultiGraph, minutes=0, hours=0, days=0, max_snapshots=None, interval=None):
+def generate_snapshots_over_time(G: nx.MultiGraph, minutes=0, hours=0, days=0, max_snapshots=None, interval=None, include_final=False):
 	"""
-	:param G: Multigraph you want to watch over time, with
+	:param G: MultiGraph you want to watch over time, with "created_at" edge attribute
+	:param minutes: Number of minutes between two snapshots (Default 0)
 	:param hours: Number of hours between two snapshots (Default 0)
 	:param days: Number of days between two snapshots (Default 0)
 	:param max_snapshots: Maximum number of generated snapshots (Default None - all snapshots are created)
 	:param interval: Tuple (start, end) specifying in which interval to generate snapshots (Default None - takes min, max created_at date of G)
+	:param include_final: If True, set G as value for max_date (Default False)
 	:return: A dict with timestamps
 	"""
 	if nx.get_edge_attributes(G, "created_at") == {}:
@@ -105,6 +107,9 @@ def generate_snapshots_over_time(G: nx.MultiGraph, minutes=0, hours=0, days=0, m
 		snapshots[date] = reduce_multi_graph(G_snapshot)
 
 		date += timedelta(minutes=minutes, hours=hours, days=days)
+
+	if  include_final:
+		snapshots[max_date] = reduce_multi_graph(G)
 	return snapshots
 
 
@@ -121,3 +126,7 @@ def reduce_multi_graph(graph: nx.MultiGraph, thresh=0):
 
 def str_to_datetime(date_str: str):
 	return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S.%f")
+
+
+def get_weight_sum(G: nx.Graph) -> int:
+	return sum(nx.get_edge_attributes(G, "weight").values())
