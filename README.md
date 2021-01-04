@@ -9,11 +9,17 @@ You can create conda env from file for convenience: ``` conda env create -f cond
     - `pyhton/`: add modules there
 
 ## ToDo:
-Create ToDo List :)
-see brainstorm.pdf
-
-- implement modularity maximization (DONE)
-- Strache bug fix + deep dive
-- Einen Artikel anschauen und Kommentare dazu anschauen
-- Mit statischem Graph vergleichen (im Gegensatz zu gewissen Artikeln)
-- Metriken finden um zwei Communities zu vergleichen
+- do Todos (R DONE)
+- implement modularity maximization (R DONE)
+- Strache bug fix + deep dive (V DONE)
+- Community von einem Artikel -> Nodes davon nehmen -> Lookup auf Following Graph -> Similarity berechnen (O)
+- Metriken finden um zwei Communities zu vergleichen (O, G)
+- Plot similarity between timestamps and "final state" = last timestep (scale 0-1) (V)
+  - needs Similarity measure = #interactions (similar to line plot in semantic.ipynb) 
+- Line Chart: plot relative interactions for each community over time (#interactions / #members), similar to lineplot in semantic.ipynb (R)
+- Cyclic behavior -> do Line 19 but plot each day and plot them on top of each other (R)
+- Präsi (G)
+- Report
+  - theoretical background
+    - community detection (mod maxim) (R)
+    - anderer der langsamer war: Girvan-Newman (O)
