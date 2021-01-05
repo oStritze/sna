@@ -71,21 +71,37 @@ def compare_snapshots(snapshots_list: List[Dict], ranges: List[range], figsize=(
 			ax_j.set_title(date, {"color": "black" if range_id % 2 == 0 else "red"})
 
 
-def compare_snapshot_weights(snapshots_list: List[Dict], figsize=(10, 5)):
+def compare_snapshot_weights(snapshots_list: List[Dict], figsize=(10, 5), plot_last_snapshot=True):
+	"""
+	:param snapshots_list: List of dicts, where the keys are dates and the values are graph snapshots. Each graph
+		must contain an edge attribute "weight"
+	:param plot_last_snapshot: If True (Default) include the snapshot weight with the maximum date into the plot
+	"""
 	weights = []
 	for i, snapshots in enumerate(snapshots_list):
+		max_date = max(snapshots.keys())
+		final_weight = utils.get_weight_sum(snapshots[max_date])
 		for date in snapshots:
-			G = snapshots[date]
-			weights.append({"community": i, "snapshot": date, "weight": utils.get_weight_sum(G)})
+			if plot_last_snapshot or date != max_date:
+				G = snapshots[date]
+				weight = utils.get_weight_sum(G)
+				weights.append({"community": i, "snapshot": date, "weight": weight, "relative_weight": weight / final_weight})
 	weights = pd.DataFrame(weights).set_index("community")
 
-	fig = plt.figure(figsize=figsize)
+	fig, ax = plt.subplots(nrows=2, figsize=figsize)
 	for community in weights.index.unique():
 		data = weights.loc[community]
-		plt.plot(data["snapshot"], data["weight"], label=community)
+		ax[0].plot(data["snapshot"], data["weight"], label=community)
+		ax[1].plot(data["snapshot"], data["relative_weight"], label=community)
 
-	plt.title("Community Development")
-	plt.xlabel("Time")
-	plt.ylabel("Interactions inside community")
-	plt.legend()
+	ax[0].set_title("Absolute Community Development")
+	ax[0].set_xlabel("Time")
+	ax[0].set_ylabel("Interactions inside community")
+	ax[0].legend()
+
+	ax[1].set_title("Relative Community Development")
+	ax[1].set_xlabel("Time")
+	ax[1].set_ylabel("Similarity to final community state")
+	ax[1].legend()
+
 	plt.show()
