@@ -70,7 +70,7 @@ def get_users_commented_other_users(postings=None, multi_di_graph=False, with_ti
 		return nx.from_pandas_edgelist(postings_joined, source="ID_CommunityIdentity_child", target="ID_CommunityIdentity_parent", create_using=nx.DiGraph, edge_attr=edge_attr)
 
 
-def get_all_users_interactions(postings=None, votes=None, multi_di_graph=False, with_timestamp=False):
+def get_all_users_interactions(postings=None, votes=None, multi_di_graph=False, with_timestamp=False, salvage_original_node_ids=False):
 	"""
 	:param postings: Custom postings dataframe, if None (default) use all postings.
 	:param votes: Custom votes dataframe, if None (default) use all votes.
@@ -87,7 +87,17 @@ def get_all_users_interactions(postings=None, votes=None, multi_di_graph=False, 
 	positives = get_users_voted_other_users(joined, positive_vote=True, multi_di_graph=multi_di_graph, with_timestamp=with_timestamp)
 	negatives = get_users_voted_other_users(joined, positive_vote=False, multi_di_graph=multi_di_graph, with_timestamp=with_timestamp)
 	comments = get_users_commented_other_users(postings, multi_di_graph=multi_di_graph, with_timestamp=with_timestamp)
-	return nx.disjoint_union_all([positives, negatives, comments])
+	
+	if salvage_original_node_ids:
+		a=nx.to_pandas_edgelist(positives)
+		b=nx.to_pandas_edgelist(negatives)
+		c=nx.to_pandas_edgelist(comments)
+		if with_timestamp:
+			return nx.from_pandas_edgelist(pd.concat([a,b,c]), source="source", target="target", edge_attr="created_at", create_using=nx.MultiDiGraph)
+		else:
+			return nx.from_pandas_edgelist(pd.concat([a,b,c]), source="source", target="target", create_using=nx.MultiDiGraph)
+	else:
+		return nx.disjoint_union_all([positives, negatives, comments])
 
 
 def get_weighted_interaction_graph(postings, votes, thresh=0):
