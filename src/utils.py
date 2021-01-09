@@ -75,7 +75,7 @@ def get_communities(G, min_size=100, random_state=19, sort_by_sum_interactions=F
 	return communities
 
 
-def generate_snapshots_over_time(G: nx.MultiGraph, minutes=0, hours=0, days=0, max_snapshots=None, interval=None, include_final=False):
+def generate_snapshots_over_time(G: nx.MultiGraph, minutes=0, hours=0, days=0, max_snapshots=None, interval=None, include_final=False, cummulative=True):
 	"""
 	:param G: MultiGraph you want to watch over time, with "created_at" edge attribute
 	:param minutes: Number of minutes between two snapshots (Default 0)
@@ -101,7 +101,11 @@ def generate_snapshots_over_time(G: nx.MultiGraph, minutes=0, hours=0, days=0, m
 		max_date = str_to_datetime(interval[1])
 	snapshots = {}
 	while date <= max_date and (max_snapshots is None or len(snapshots) < max_snapshots):
-		edges_snapshot = [(a, b) for (a, b, attr) in edges if str_to_datetime(attr["created_at"]) <= date]
+		if cummulative:
+			edges_snapshot = [(a, b) for (a, b, attr) in edges if str_to_datetime(attr["created_at"]) <= date]
+		else:
+			edges_snapshot = [(a, b) for (a, b, attr) in edges if (
+					date <= str_to_datetime(attr["created_at"]) <= date + timedelta(minutes=minutes, hours=hours, days=days))]
 		nodes_snapshot = list(sum(edges_snapshot, ()))
 		G_snapshot = G.subgraph(nodes_snapshot)
 		snapshots[date] = reduce_multi_graph(G_snapshot)
@@ -130,3 +134,6 @@ def str_to_datetime(date_str: str):
 
 def get_weight_sum(G: nx.Graph) -> int:
 	return sum(nx.get_edge_attributes(G, "weight").values())
+
+def add_a_day(date_string):
+	return str(str_to_datetime(date_string) + timedelta(1)) + ".000"
