@@ -12,12 +12,13 @@ You can create conda env from file for convenience: ``` conda env create -f cond
 - do Todos (R DONE)
 - implement modularity maximization (R DONE)
 - Strache bug fix + deep dive (V DONE)
-- Community von einem Artikel -> Nodes davon nehmen -> Lookup auf Following Graph -> Similarity berechnen (O)
-- Metriken finden um zwei Communities zu vergleichen (O, G)
-- Plot similarity between timestamps and "final state" = last timestep (scale 0-1) (V)
+- Community von einem Artikel -> Nodes davon nehmen -> Lookup auf Following Graph -> Similarity berechnen (O DONE)
+- Metriken finden um zwei Communities zu vergleichen (O, G DONE)
+- Plot similarity between timestamps and "final state" = last timestep (scale 0-1) (V DONE)
   - needs Similarity measure = #interactions (similar to line plot in semantic.ipynb) 
-- Line Chart: plot relative interactions for each community over time (#interactions / #members), similar to lineplot in semantic.ipynb (R)
-- Cyclic behavior -> do Line 19 but plot each day and plot them on top of each other (R)
+- Line Chart: plot relative interactions for each community over time (#interactions / #members), similar to lineplot in semantic.ipynb (G DONE kinda)
+- Cyclic behavior -> do above plot each day and plot them on top of each other (R DONE)
+  - add vertical lines for biggest articles (R DONE)
 - Präsi (G)
 - Report
   - theoretical background
