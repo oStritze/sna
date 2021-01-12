@@ -105,3 +105,41 @@ def compare_snapshot_weights(snapshots_list: List[Dict], figsize=(10, 5), plot_l
 	ax[1].legend()
 
 	plt.show()
+
+
+def compare_cyclic_snapshot_weights(snapshots_list: List[List[Dict]], article_dates, figsize=(10, 5), plot_last_snapshot=True):
+	"""
+	:param snapshots_list: List of list of dicts, where the keys are dates and the values are graph snapshots. Each graph
+		must contain an edge attribute "weight"
+	:param plot_last_snapshot: If True (Default) include the snapshot weight with the maximum date into the plot
+	:param article_dates: dates of articles to be plotted as vertical lines along the graphs
+	"""
+	weights_list = []
+	for day in snapshots_list:
+		weights = []
+		for i, snapshots in enumerate(day):
+			max_date = max(snapshots.keys())
+			final_weight = utils.get_weight_sum(snapshots[max_date])
+			for date in snapshots:
+				if plot_last_snapshot or date != max_date:
+					G = snapshots[date]
+					weight = utils.get_weight_sum(G)
+					weights.append({"community": i, "snapshot": date, "weight": weight, "relative_weight": weight / final_weight})
+		weights = pd.DataFrame(weights).set_index("community")
+		weights_list.append(weights)
+
+	fig, ax = plt.subplots(nrows=len(snapshots_list), figsize=figsize)
+	for i in range(0, len(weights_list)):
+		weights = weights_list[i]
+		ax[i].plot(weights["snapshot"], weights["weight"], label="community interaction")
+		ax[i].set_title("Absolute Community Development - " + str(list(weights["snapshot"])[0]).split(" ")[0])
+		ax[i].set_xlabel("Time")
+		ax[i].set_ylabel("Interactions inside community")
+		ax[i].legend()
+
+		for index, row in article_dates.iterrows():
+			d = utils.str_to_datetime(row[1])
+			if list(weights["snapshot"])[0] < d < list(weights["snapshot"])[-1]:
+				ax[i].axvline(x=d)
+
+	plt.show()
